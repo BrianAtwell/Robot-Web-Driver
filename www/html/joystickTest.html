@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<html lang="en">
+<head>
+	<title>Mouse/Touch Screen Test</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<style>
+	body {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+	}
+	</style>
+	<script src="js/jquery-1.12.0.min.js"></script>
+	<script src="autojoy/js/jquery.autojoy.new.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+<script src="js/bootstrap.min.js" ></script>
+</head>
+<body>
+	<div class="outputDIV">
+	</div>
+	
+	<script>
+	$(document).on('touchstart mousedown', document,function (event){
+		console.log(event);
+		$(".outputDIV").append("<strong>event type:</strong> "+event.type+"<br>");
+		event.stopPropagation();
+        event.preventDefault();
+        if(event.handled !== true) {
+
+            // Do your magic here.
+
+            event.handled = true;
+        } else {
+            return false;
+        }
+	});
+	
+	$(document).on('touchend mouseup', document,function (event){
+		console.log(event);
+		$(".outputDIV").append("<strong>event type:</strong> "+event.type+"<br>");
+		event.stopPropagation();
+        event.preventDefault();
+        if(event.handled !== true) {
+
+            // Do your magic here.
+
+            event.handled = true;
+        } else {
+            return false;
+        }
+	});
+	
+	$("body").autojoy({
+		canvasWidth:300,
+		canasHeight:300
+	});
+	</script>
+</body>
+</html>

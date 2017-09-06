@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>Robot Driver</title>
+	<title>Robot Driver V2</title>
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<style>
 	body {
@@ -65,9 +65,9 @@
 	<div class="jstick-spacer">
 		<div class="jstick-header">
 		<h2>Joystick</h2>
-		<div class="jstick-bg">
-			<div draggable="true" class="jstick-actual">
-			</div>
+		<div class="autojoyDiv">
+			<canvas width="200px" height="200px" style="border-style: solid;">
+			</canvas>
 		</div>
 		</div>
 	</div>
@@ -75,298 +75,18 @@
 	</div>
 	
 	<script>
-	
-	window.jstick ={
-		drag: {offset: { x:0, y:0} },
-		actual: {hwidth:0, hheight:0},
-		halfJoy: {width:0, height:0},
-		defPos: {x: 0, y:0 },
-		pos: {x: 0, y:0},
-		prevpos: {x:0, y:0},
-		posThreshold: 0.5,
-		timerElapse: 500,
-		timerID: 0,
-		timerStatus: 0,
-		beforeUpdate: {
-			startPos: {x:0, y:0},
-			avgPos: {x:0, y:0},
-			velPos: {x:0, y:0},
-			prevPos: {x:0, y:0},
-			endPos: {x:0, y:0}
-			},
+	$(".autojoyDiv").autojoy({
+		canvasSize: "200px",
+		canvasWidth: "200px",
+		canvasHeight: "200px",
 		
-		changeList:  [],
-		isdrag: false
-	};
-	jstick.drag.offset.x=0;
-	jstick.drag.offset.y=0;
-	jstick.actual.hwidth=$(".jstick-actual").width()/2;
-	jstick.actual.hheight=$(".jstick-actual").height()/2;
-	jstick.defPos.x=$(".jstick-actual").offset().left+jstick.actual.hwidth;
-	jstick.defPos.y=$(".jstick-actual").offset().top+jstick.actual.hheight;
-	jstick.halfJoy.width=($(".jstick-bg").width()-$(".jstick-actual").width())/2;
-	jstick.halfJoy.height=($(".jstick-bg").height()-$(".jstick-actual").height())/2;
-	
-	jstick.calcDistance = function(pos1, pos2) {
-		var y;
-		var x;
-		
-		y=pos2.y-pos1.y;
-		x=pos2.x-pos2.x;
-		
-		return Math.sqrt(y*y+x*x);
-	}
-	
-	jstick.checkPos = function(dist) {
-		var isUpdated=false;
-	
-		if(jstick.pos.x==0 && jstick.pos.y==0)
-		{
-			jstick.endTimer();
-			jstick.updateServer();
-			isUpdated=true;
-		}
-		else
-		{
-			jstick.startTimer();
-		}
-		
-		if(!isUpdated && dist >= jstick.posThreshold)
-		{
-			jstick.updateServer();
-		}
-	}
-	
-	jstick.endTimer = function() {
-		if(jstick.timerStatus == 1)
-		{
-			window.clearTimeout(jstick.timerID);
-			jstick.timerStatus=0;
-		}
-	}
-	
-	jstick.startTimer = function() {
-		if(jstick.timerStatus == 0)
-		{
-			jstick.timerID = window.setInterval(jstick.timerFnc, jstick.timerElapse);
-			jstick.timerStatus=1;
-		}
-	}
-	
-	jstick.timerFnc = function() {
-		jstick.updateServer();
-	}
-	
-	jstick.updateServer = function() {
-		$.get("cgi-bin/tankdriver.py", {
-			"posx":jstick.pos.x,
-			"posy":jstick.pos.y
-		}, function (data) {
-			var elem = $(".jstick-status");
-			elem.removeClass("alert-warning");
-			elem.removeClass("alert-danger");
-			elem.addClass("alert-success");
-			elem.empty();
-			elem.append("<h2>Successfully connected to Server</h2>"+
-			"<div>posx:"+data.posx+" posy:"+data.posy+"</div>"+
-			"<div> left motor speed:"+data.lmspd+" right motor speed:"+data.rmspd+"</div>"+
-			"<div> left motor direction:"+data.lmdir+" right motor direction:"+data.rmdir+"</div>");
-		}).fail(function (errData) {
-			var elem = $(".jstick-status");
-			elem.removeClass("alert-success");
-			elem.removeClass("alert-warning");
-			elem.addClass("alert-danger");
-			elem.empty();
-			elem.append("<h2>Failed to connect to Server</h2>Error: "+errData.status+" "+errData.statusText);
-		});
-	}
-	
-	jstick.changePos = function (parm1) {
-	
-		if(parm1) {
-			// Is a function
-			if($.isFunction(parm1))
-			{
-				list.push(parm1);
-			}
-			// Is a position
-			else if(parm1.x && parm1.y)
-			{
-				jstick.prevpos.x=jstick.pos.x;
-				jstick.prevpos.y=jstick.pos.y;
-		
-				jstick.pos.x = parm1.x;
-				jstick.pos.y = parm1.y;
-				
-				var dist = jstick.calcDistance(jstick.pos, jstick.prevpos);
-				
-				jstick.checkPos(dist);
-				
-				var list = jstick.changeList;
-				var x;
-				for(x in list)
-				{
-					list[x](jstick.pos);
-				}
-				return jstick.pos;
-			}
-		}
-		else
-		{
-			jstick.convertPos();
-			
-			var dist = jstick.calcDistance(jstick.pos, jstick.prevpos);
-			
-			jstick.checkPos(dist);
-			
-			var list = jstick.changeList;
-			var x;
-			for(x in list)
-			{
-				list[i](jstick.pos);
-			}
-			return jstick.pos;
-		}
-	}
-	
-	jstick.getPosition = function () {
-		return jstick.pos;
-	}
-	
-	jstick.setPosition = function (newPos) {
-		jstick.changePos(newPos);
-	}
-	
-	jstick.convertPos = function () {
-		var bgElem = $(".jstick-bg");
-		var actual = $(".jstick-actual");
-		var pos = {x:0, y:0};
-		
-		jstick.prevpos.x=jstick.pos.x;
-		jstick.prevpos.y=jstick.pos.y;
-		
-		pos.x = (actual.offset().left-bgElem.offset().left-jstick.halfJoy.width)/jstick.halfJoy.width;
-		pos.y = -(actual.offset().top-bgElem.offset().top-jstick.halfJoy.height)/jstick.halfJoy.height;
-		
-		jstick.pos.x=pos.x;
-		jstick.pos.y=pos.y;
-	}
-	
-	function debugContains(elem1) {
-		console.log("elem1.offset().left: "+elem1.offset().left);
-		console.log("elem1.offset().right: "+elem1.offset().right);
-		console.log("elem1.offset().left+elem1.width(): "+(elem1.offset().left+elem1.width()));
-		console.log("elem1.offset().left+elem1.height(): "+(elem1.offset().left+elem1.height()));
-	}
-	
-	jstick.containsElemAll = function (elem1, elem2, event) {
-		var struct = {
-		elem1: elem1,
-		elem2: elem2,
-		left: elem1.offset().left <= event.clientX-jstick.drag.offset.x,
-		top: elem1.offset().top <= event.clientY-jstick.drag.offset.y,
-		bottom: elem1.offset().top+elem1.height() >= elem2.height()+event.clientY-jstick.drag.offset.y,
-		right: elem1.offset().left+elem1.width() >= elem2.width()+event.clientX-jstick.drag.offset.x,
-		all: false
-		};
-		
-		struct.all = struct.left && struct.right && struct.top && struct.bottom;
-	
-		return struct;
-	}
-	
-	jstick.mousemove = function (event) {
-		if(jstick.isdrag)
-		{
-			//console.log("mouse move");
-			
-			var elemStruct;
-			elemStruct = jstick.containsElemAll($(".jstick-bg"), $(".jstick-actual"), event);
-			if(elemStruct.all)
-			{
-				$(".jstick-actual").css({position:"fixed", left:event.clientX-(jstick.drag.offset.x), top:event.clientY-(jstick.drag.offset.y) });
-			}
-			else
-			{
-				var locX=-5;
-				var locY=-5;
-
-				
-				if(!elemStruct.left)
-				{
-					locX = elemStruct.elem1.offset().left;
-				}
-				
-				if(!elemStruct.right)
-				{
-					locX = elemStruct.elem1.offset().left+elemStruct.elem1.width()- elemStruct.elem2.width();
-				}
-				
-				if(!elemStruct.top)
-				{
-					locY = elemStruct.elem1.offset().top;
-				}
-				
-				if(!elemStruct.bottom)
-				{
-					locY = elemStruct.elem1.offset().top+elemStruct.elem1.height()-elemStruct.elem2.height();
-				}
-				
-				if(-5 == locY)
-				{
-					locY = event.clientY-(jstick.drag.offset.y);
-				}
-				
-				if(-5 == locX)
-				{
-					locX = event.clientX-(jstick.drag.offset.x);
-				}
-				
-				$(".jstick-actual").css({position:"fixed", left:locX, top:locY });
-			}
-			
-			jstick.changePos();
-		}
-	}
-	
-	$("body").mousemove(jstick.mousemove);
-	
-	
-	$(".jstick-actual").mousedown(function (e){
-		if(!jstick.isdrag)
-		{
-			jstick.drag.offset.x = e.clientX - $(".jstick-actual").offset().left;
-			jstick.drag.offset.y = e.clientY - $(".jstick-actual").offset().top;
-		}
-		jstick.isdrag=true;
-		
-		//console.log("mouse down");
-	});
-	
-	$("body").mouseup(function (e){
-		if(jstick.isdrag)
-		{
-			$(".jstick-actual").removeAttr("style");
-			jstick.changePos();
-		}
-		jstick.isdrag=false;
-		//console.log("mouse up");
-		//var locLeft = ($(".jstick-bg").width()/2) - ($(".jstick-actual").css("width")/2);
-		//var locTop = ($(".jstick-bg").css("height")/2) - ($(".jstick-actual").css("height")/2);
-	});
-	
-	$("body").mouseleave(function (e) {
-		if(jstick.isdrag)
-		{
-			jstick.isdrag=false;
-			$(".jstick-actual").removeAttr("style");
-			jstick.changePos();
-		}
-	});
-	
-	$("body").unload(function (e) {
-		jstick.endTimer();
-		jstick.changePos({x:0,y:0});
+		playColor: "yellow",
+		playImg: "url",
+		stickSize: "75px",
+		stickWidth: "75px",
+		stickHeight: "75px",
+		stickColor: "yellow",
+		stickImg: "url"
 	});
 	</script>
 </body>
